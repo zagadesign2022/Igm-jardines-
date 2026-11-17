@@ -1,4 +1,16 @@
 
+      - name: Ajustar compatibilidad Java y Kotlin
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: |
+          cat >> app/build.gradle.kts <<'EOF'
+
+          // Alinear Java con Kotlin (ambos usan JVM 17)
+          tasks.withType<JavaCompile>().configureEach {
+              sourceCompatibility = "17"
+              targetCompatibility = "17"
+          }
+          EOF
+          
 name: Compilar APK IGM JARDINES
 
 on:
