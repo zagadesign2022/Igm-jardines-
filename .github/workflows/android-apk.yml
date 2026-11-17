@@ -68,6 +68,27 @@ jobs:
               }
           }
           EOF
+      
+      - name: Declarar APIs Material 3 experimentales
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          files = [
+              Path("app/src/main/java/com/igmjardines/app/AssetsTravelScreens.kt"),
+              Path("app/src/main/java/com/igmjardines/app/ExpenseScreens.kt"),
+              Path("app/src/main/java/com/igmjardines/app/WorkOrdersScreen.kt"),
+          ]
+          annotation = "@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)\n"
+          for path in files:
+              if not path.is_file():
+                  raise SystemExit(f"No se encuentra: {path}")
+              content = path.read_text(encoding="utf-8")
+              if not content.startswith("@file:OptIn("):
+                  path.write_text(annotation + content, encoding="utf-8")
+              print(f"Corregido: {path}")
+          PY
           
 
       - name: Compilar APK
