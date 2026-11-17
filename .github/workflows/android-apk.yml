@@ -55,16 +55,20 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
+
       - name: Ajustar compatibilidad Java y Kotlin
         working-directory: ${{ steps.project.outputs.dir }}
         run: |
           cat >> app/build.gradle.kts <<'EOF'
 
-          tasks.withType<JavaCompile>().configureEach {
-              sourceCompatibility = "17"
-              targetCompatibility = "17"
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
           }
           EOF
+          
 
       - name: Compilar APK
         working-directory: ${{ steps.project.outputs.dir }}
