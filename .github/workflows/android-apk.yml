@@ -1,1 +1,68 @@
 
+name: Compilar APK IGM JARDINES
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/android-apk.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Descargar proyecto v0.32
+        run: |
+          mkdir -p proyecto
+          curl -fL "https://raw.githubusercontent.com/zagadesign2022/Igm-jardines-/main/IGM_JARDINES_Proyecto_Android_v32_Justificantes_Preflight%281%29.zip" -o proyecto.zip
+          unzip -q proyecto.zip -d proyecto
+
+      - name: Localizar proyecto Android
+        id: project
+        run: |
+          FILE=$(find proyecto -name settings.gradle.kts -print -quit)
+          if [ -z "$FILE" ]; then
+            echo "No se encuentra settings.gradle.kts"
+            exit 1
+          fi
+          DIR=$(dirname "$FILE")
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Proyecto localizado en: $DIR"
+
+      - name: Comprobar proyecto
+        run: |
+          if [ -f tools/preflight.py ]; then
+            python tools/preflight.py
+          elif [ -f "${{ steps.project.outputs.dir }}/tools/preflight.py" ]; then
+            python "${{ steps.project.outputs.dir }}/tools/preflight.py"
+          fi
+        working-directory: .
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Compilar APK
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: gradle --no-daemon assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: IGM-JARDINES-APK
+          path: proyecto/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          
