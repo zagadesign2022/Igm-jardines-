@@ -9,7 +9,32 @@ on:
     paths:
       - ".github/workflows/android-apk.yml"
 
+permissions:
+  contents: write
+  
 jobs:
+
+  extraer-proyecto:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Descomprimir versión 0.32
+        run: |
+          mkdir -p version-032-descomprimida
+          curl -fL "https://raw.githubusercontent.com/zagadesign2022/Igm-jardines-/main/IGM_JARDINES_Proyecto_Android_v32_Justificantes_Preflight%281%29.zip" -o proyecto.zip
+          unzip -oq proyecto.zip -d version-032-descomprimida
+
+      - name: Guardar archivos en GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C version-032-descomprimida
+          git add version-032-descomprimida
+          git commit -m "Extraer proyecto Android versión 0.32" || true
+          git push --force origin HEAD:version-032-descomprimida
+          
   build:
     runs-on: ubuntu-latest
 
