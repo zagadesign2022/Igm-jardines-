@@ -1,4 +1,3 @@
-
 name: Compilar APK IGM JARDINES
 
 on:
@@ -6,41 +5,23 @@ on:
   push:
     branches:
       - main
+      - version-032-descomprimida
     paths:
       - ".github/workflows/android-apk.yml"
+      - "version-032-descomprimida/**"
 
 permissions:
-  contents: write
-  
+  contents: read
+
 jobs:
-
-  extraer-proyecto:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v4
-
-      - name: Descomprimir versión 0.32
-        run: |
-          mkdir -p version-032-descomprimida
-          curl -fL "https://raw.githubusercontent.com/zagadesign2022/Igm-jardines-/main/IGM_JARDINES_Proyecto_Android_v32_Justificantes_Preflight%281%29.zip" -o proyecto.zip
-          unzip -oq proyecto.zip -d version-032-descomprimida
-
-      - name: Guardar archivos en GitHub
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -C version-032-descomprimida
-          git add version-032-descomprimida
-          git commit -m "Extraer proyecto Android versión 0.32" || true
-          git push --force origin HEAD:version-032-descomprimida
-          
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar repositorio
+      - name: Descargar proyecto
         uses: actions/checkout@v4
+        with:
+          ref: version-032-descomprimida
 
       - name: Preparar Java
         uses: actions/setup-java@v4
@@ -48,16 +29,10 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Descargar proyecto v0.32
-        run: |
-          mkdir -p proyecto
-          curl -fL "https://raw.githubusercontent.com/zagadesign2022/Igm-jardines-/main/IGM_JARDINES_Proyecto_Android_v32_Justificantes_Preflight%281%29.zip" -o proyecto.zip
-          unzip -q proyecto.zip -d proyecto
-
       - name: Localizar proyecto Android
         id: project
         run: |
-          FILE=$(find proyecto -name settings.gradle.kts -print -quit)
+          FILE=$(find version-032-descomprimida -name settings.gradle.kts -print -quit)
           if [ -z "$FILE" ]; then
             echo "No se encuentra settings.gradle.kts"
             exit 1
@@ -73,13 +48,11 @@ jobs:
           elif [ -f "${{ steps.project.outputs.dir }}/tools/preflight.py" ]; then
             python "${{ steps.project.outputs.dir }}/tools/preflight.py"
           fi
-        working-directory: .
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.10.2"
-
 
       - name: Ajustar compatibilidad Java y Kotlin
         working-directory: ${{ steps.project.outputs.dir }}
@@ -93,7 +66,7 @@ jobs:
               }
           }
           EOF
-      
+
       - name: Declarar APIs Material 3 experimentales
         working-directory: ${{ steps.project.outputs.dir }}
         run: |
@@ -114,7 +87,6 @@ jobs:
                   path.write_text(annotation + content, encoding="utf-8")
               print(f"Corregido: {path}")
           PY
-          
 
       - name: Compilar APK
         working-directory: ${{ steps.project.outputs.dir }}
@@ -124,6 +96,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: IGM-JARDINES-APK
-          path: proyecto/**/build/outputs/apk/debug/*.apk
+          path: version-032-descomprimida/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           
